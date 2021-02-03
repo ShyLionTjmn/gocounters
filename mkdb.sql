@@ -25,21 +25,34 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   PRIMARY KEY pk_c_id(c_id)
 );
 
-CREATE TABLE rs (
+CREATE TABLE rs ( # Таблица суточных показаний, ключ YYYYMMDD во временной зоне устройства!
   r_id INTEGER NOT NULL AUTO_INCREMENT,
   r_name VARCHAR(32) NOT NULL, # имя переменной
   r_value VARCHAR(32) NOT NULL, # крайнее значение при считывании
   r_date VARCHAR(16) NOT NULL, # YYYYMMDD дата считывания для посуточной истории
   r_time BIGINT NOT NULL, # точное время крайнего считывания
-  fk_c_id INTEGER NOT NULL,
+  r_fk_c_id INTEGER NOT NULL,
   PRIMARY KEY pk_r_id(r_id),
-  FOREIGN KEY r_fk_c_id(fk_c_id) REFERENCES cs(c_id),
-  UNIQUE KEY uk_r_date_fk_c_id_r_name(r_date,fk_c_id,r_name)
+  FOREIGN KEY fk_r_fk_c_id(r_fk_c_id) REFERENCES cs(c_id),
+  UNIQUE KEY uk_r_date_fk_c_id_r_name(r_date,r_fk_c_id,r_name)
 );
+
+CREATE TABLE ds ( # Таблица крайних значений информационных показаний устройства
+  d_id INTEGER NOT NULL AUTO_INCREMENT,
+  d_name VARCHAR(32) NOT NULL, # имя переменной
+  d_value VARCHAR(32) NOT NULL, # крайнее значение при считывании
+  d_time BIGINT NOT NULL, # точное время крайнего считывания
+  d_fk_c_id INTEGER NOT NULL,
+  PRIMARY KEY pk_d_id(d_id),
+  FOREIGN KEY fk_d_fk_c_id(d_fk_c_id) REFERENCES cs(c_id),
+  UNIQUE KEY uk_d_fk_c_id_d_name(d_fk_c_id,d_name)
+);
+  
 
 INSERT INTO cs SET
    c_type='gost-c-electro-1p'
   ,c_connect='10.10.13.131:50'
+  ,c_serial='auto'
   ,c_location='Республики 243/1, тестовый стенд'
   ,c_descr='Тестовый стенд'
   ,c_tz='Asia/Yekaterinburg'
