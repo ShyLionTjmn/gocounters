@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS ds;
 DROP TABLE IF EXISTS rs;
 DROP TABLE IF EXISTS cs;
 
@@ -40,7 +41,7 @@ CREATE TABLE rs ( # Таблица суточных показаний, ключ
 CREATE TABLE ds ( # Таблица крайних значений информационных показаний устройства
   d_id INTEGER NOT NULL AUTO_INCREMENT,
   d_name VARCHAR(32) NOT NULL, # имя переменной
-  d_value VARCHAR(32) NOT NULL, # крайнее значение при считывании
+  d_value VARCHAR(256) NOT NULL, # крайнее значение при считывании
   d_time BIGINT NOT NULL, # точное время крайнего считывания
   d_fk_c_id INTEGER NOT NULL,
   PRIMARY KEY pk_d_id(d_id),
