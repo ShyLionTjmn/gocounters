@@ -26,6 +26,18 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   PRIMARY KEY pk_c_id(c_id)
 );
 
+CREATE TABLE crs ( # таблица коррекции показаний, прибавляется при отображении
+  cr_id INTEGER NOT NULL AUTO_INCREMENT,
+  cr_name VARCHAR(32) NOT NULL, # имя переменной
+  cr_value DECIMAL(20,3) NOT NULL, # значение коррекции
+  cr_fk_c_id INTEGER NOT NULL,
+  PRIMARY KEY pk_cr_id(cr_id),
+  FOREIGN KEY fk_cr_fk_c_id(cr_fk_c_id) REFERENCES cs(c_id),
+  UNIQUE KEY uk_cr_fk_c_id_cr_name(cr_fk_c_id,cr_name)
+);
+
+
+
 CREATE TABLE rs ( # Таблица суточных показаний, ключ YYYYMMDD во временной зоне устройства!
   r_id INTEGER NOT NULL AUTO_INCREMENT,
   r_name VARCHAR(32) NOT NULL, # имя переменной
