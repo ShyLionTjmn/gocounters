@@ -1,5 +1,7 @@
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ds;
 DROP TABLE IF EXISTS rs;
+DROP TABLE IF EXISTS crs;
 DROP TABLE IF EXISTS cs;
 
 CREATE TABLE cs ( # Таблица счетчиков ЖКХ
@@ -31,12 +33,12 @@ CREATE TABLE crs ( # таблица коррекции показаний, пр�
   cr_name VARCHAR(32) NOT NULL, # имя переменной
   cr_value DECIMAL(20,3) NOT NULL, # значение коррекции
   cr_fk_c_id INTEGER NOT NULL,
+  ts BIGINT NOT NULL, #
+  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   PRIMARY KEY pk_cr_id(cr_id),
   FOREIGN KEY fk_cr_fk_c_id(cr_fk_c_id) REFERENCES cs(c_id),
   UNIQUE KEY uk_cr_fk_c_id_cr_name(cr_fk_c_id,cr_name)
 );
-
-
 
 CREATE TABLE rs ( # Таблица суточных показаний, ключ YYYYMMDD во временной зоне устройства!
   r_id INTEGER NOT NULL AUTO_INCREMENT,
@@ -60,6 +62,18 @@ CREATE TABLE ds ( # Таблица крайних значений информ�
   FOREIGN KEY fk_d_fk_c_id(d_fk_c_id) REFERENCES cs(c_id),
   UNIQUE KEY uk_d_fk_c_id_d_name(d_fk_c_id,d_name)
 );
+
+CREATE TABLE users ( # Пользователи
+  user_id INTEGER NOT NULL AUTO_INCREMENT,
+  user_login VARCHAR(128) NOT NULL,
+  user_md5_password VARCHAR(256) NOT NULL,
+  user_rights VARCHAR(1024) NOT NULL,
+  user_name VARCHAR(256) NOT NULL,
+  ts BIGINT NOT NULL, #
+  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
+  PRIMARY KEY pk_user_id(user_id),
+  UNIQUE KEY uk_user_login(user_login)
+);
   
 
 INSERT INTO cs SET
@@ -69,4 +83,13 @@ INSERT INTO cs SET
   ,c_location='Республики 243/1, тестовый стенд'
   ,c_descr='Тестовый стенд'
   ,c_tz='Asia/Yekaterinburg'
+;
+
+INSERT INTO users SET
+   user_login='admin'
+  ,user_md5_password=MD5('mc92304tumckjr')
+  ,user_rights='super'
+  ,user_name='Super admin'
+  ,change_by='admin'
+  ,ts=UNIX_TIMESTAMP()
 ;
