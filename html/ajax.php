@@ -125,7 +125,7 @@ if(isset($_SESSION['login']) && isset($_SESSION['password']) && isset($_SESSION[
 };
 
 $query="SELECT * FROM users WHERE user_login='".mysqli_real_escape_string($db,$check_login)."' AND user_md5_password=MD5('".mysqli_real_escape_string($db,$check_password)."')";
-$user_row=return_one($query,TRUE,"Authr error");
+$user_row=return_one($query,TRUE,"no_auth");
 
 
 $_SESSION['time']=time();
