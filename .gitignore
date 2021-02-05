@@ -1,0 +1,11 @@
+*/*
+!*.go
+!*.json
+!*.sql
+!Makefile
+!README.md
+!inst
+!html/*.php
+!html/*.json
+html/local.php
+html/local_devel.php
