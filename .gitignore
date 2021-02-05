@@ -2,6 +2,7 @@
 !*.go
 !*.json
 !*.sql
+local.sql
 !Makefile
 !README.md
 !inst

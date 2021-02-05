@@ -85,11 +85,12 @@ INSERT INTO cs SET
   ,c_tz='Asia/Yekaterinburg'
 ;
 
-INSERT INTO users SET
-   user_login='admin'
-  ,user_md5_password=MD5('mc92304tumckjr')
-  ,user_rights='super'
-  ,user_name='Super admin'
-  ,change_by='admin'
-  ,ts=UNIX_TIMESTAMP()
-;
+# insert startup admin
+#INSERT INTO users SET
+#   user_login='admin'
+#  ,user_md5_password=MD5('your password')
+#  ,user_rights='super'
+#  ,user_name='Super admin'
+#  ,change_by='admin'
+#  ,ts=UNIX_TIMESTAMP()
+#;

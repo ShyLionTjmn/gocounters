@@ -160,6 +160,14 @@ if($q['action'] == 'user_check') {
   ok_exit(Array("user_self_id" => $user_self_id,
     "user_rights" => $user_rights, "user_name" => $user_name, "user_login" => $check_login
   ));
+} else if($q['action'] == 'list_counters') {
+  $ret=Array();
+
+  $ret['cs'] = return_query("SELECT * FROM cs WHERE c_deleted=0");
+  $ret['ds'] = return_query("SELECT ds.* FROM ds INNER JOIN cs ON c_id=d_fk_c_id WHERE c_deleted=0");
+  $ret['crs'] = return_query("SELECT * FROM crs INNER JOIN cs ON c_id=cr_fk_c_id WHERE c_deleted=0");
+
+  ok_exit($ret);
 };
 
 error_exit("Unknown action: ".$q['action']);
