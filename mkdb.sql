@@ -4,6 +4,15 @@ DROP TABLE IF EXISTS rs;
 DROP TABLE IF EXISTS crs;
 DROP TABLE IF EXISTS cs;
 
+CREATE TABLE ss ( # Таблица поставщиков услуг
+  s_id  INTEGER NOT NULL AUTO_INCREMENT,
+  s_short_name VARCHAR(128) NOT NULL, # Кратое название при отображении в списках
+  s_full_name VARCHAR(1024) NOT NULL, # Полное название
+  s_contacts VARCHAR(1024) NOT NULL, # Контактная информация
+  PRIMARY KEY pk_s_id(s_id),
+  UNIQUE KEY uk_s_short_name(s_short_name)
+);
+
 CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   c_id	INTEGER NOT NULL AUTO_INCREMENT,
   c_type VARCHAR(64) NOT NULL, # цифробуквенное обозначение типа счетчика, однозначно указывающее на протокол взаимодействия и набор считываемых параметров
@@ -13,6 +22,8 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   c_location VARCHAR(256) NOT NULL, # Словесное описание места установки
   c_coords VARCHAR(256) NOT NULL, # Географические координаты для системы отображения на карте, формат задается фронтендом
   c_descr VARCHAR(256) NOT NULL, # Словесное описание
+  c_fk_s_id INTEGER, # Поставщик услуг
+  c_number VARCHAR(256) NOT NULL, # Номер в системе учета поставщика услуг
   c_comment VARCHAR(1024) NOT NULL, # Дополнительный коментарий, где техподдержка может писать пояснения, текущие проблемы и т.п.
   c_model VARCHAR(256) NOT NULL, # Модель, заполняется демоном опроса, автоматически
   c_serial VARCHAR(256) NOT NULL, # Серийный номер, опрос переходит в состояние ошибки если номер не совпадает. Значение auto атоматически будет заменено на считаный номер.
@@ -25,7 +36,8 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   ts BIGINT NOT NULL, #
   change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   UNIQUE KEY uk_c_connect(c_connect, c_deleted),
-  PRIMARY KEY pk_c_id(c_id)
+  PRIMARY KEY pk_c_id(c_id),
+  FOREIGN KEY fk_c_fk_s_id(c_fk_s_id) REFERENCES ss(s_id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE TABLE crs ( # таблица коррекции показаний, прибавляется при отображении

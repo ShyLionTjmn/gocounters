@@ -19,9 +19,12 @@
 <HEAD>
 <TITLE><?php echo $title; ?></TITLE>
 <link rel="icon" href="data:;base64,iVBORw0KGgo=">
-<link href="/jq-ui/jquery-ui.css" rel="stylesheet">
-<SCRIPT type="text/javascript" src="/jq.js"></script>
-<SCRIPT type="text/javascript" src="/jq-ui/jquery-ui.js"></script>
+<link href="/lib/jquery-ui/jquery-ui.min.css" rel="stylesheet">
+<link href="/lib/jquery-ui-iconfont/jquery-ui-1.12.icon-font.min.css" rel="stylesheet">
+<link href="/lib/datatables.min.css" rel="stylesheet">
+<SCRIPT type="text/javascript" src="/lib/jquery.js"></script>
+<SCRIPT type="text/javascript" src="/lib/jquery-ui/jquery-ui.min.js"></script>
+<SCRIPT type="text/javascript" src="/lib/datatables.min.js"></script>
 <SCRIPT type="text/javascript">
 var AJAX = "<?php echo $ajax; ?>";
 var version = "<?php echo $version; ?>";
