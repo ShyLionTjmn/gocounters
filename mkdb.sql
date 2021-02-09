@@ -3,12 +3,15 @@ DROP TABLE IF EXISTS ds;
 DROP TABLE IF EXISTS rs;
 DROP TABLE IF EXISTS crs;
 DROP TABLE IF EXISTS cs;
+DROP TABLE IF EXISTS ss;
 
 CREATE TABLE ss ( # Таблица поставщиков услуг
   s_id  INTEGER NOT NULL AUTO_INCREMENT,
   s_short_name VARCHAR(128) NOT NULL, # Кратое название при отображении в списках
   s_full_name VARCHAR(1024) NOT NULL, # Полное название
   s_contacts VARCHAR(1024) NOT NULL, # Контактная информация
+  ts BIGINT NOT NULL, #
+  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   PRIMARY KEY pk_s_id(s_id),
   UNIQUE KEY uk_s_short_name(s_short_name)
 );
@@ -86,23 +89,3 @@ CREATE TABLE users ( # Пользователи
   PRIMARY KEY pk_user_id(user_id),
   UNIQUE KEY uk_user_login(user_login)
 );
-  
-
-INSERT INTO cs SET
-   c_type='gost-c-electro-1p'
-  ,c_connect='10.10.13.131:50'
-  ,c_serial='auto'
-  ,c_location='Республики 243/1, тестовый стенд'
-  ,c_descr='Тестовый стенд'
-  ,c_tz='Asia/Yekaterinburg'
-;
-
-# insert startup admin
-#INSERT INTO users SET
-#   user_login='admin'
-#  ,user_md5_password=MD5('your password')
-#  ,user_rights='super'
-#  ,user_name='Super admin'
-#  ,change_by='admin'
-#  ,ts=UNIX_TIMESTAMP()
-#;

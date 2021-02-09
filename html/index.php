@@ -22,6 +22,7 @@
 <link href="/lib/jquery-ui/jquery-ui.min.css" rel="stylesheet">
 <link href="/lib/jquery-ui-iconfont/jquery-ui-1.12.icon-font.min.css" rel="stylesheet">
 <link href="/lib/datatables.min.css" rel="stylesheet">
+<SCRIPT type="application/json" id="types"><?php readfile("types.json"); ?></SCRIPT>
 <SCRIPT type="text/javascript" src="/lib/jquery.js"></script>
 <SCRIPT type="text/javascript" src="/lib/jquery-ui/jquery-ui.min.js"></script>
 <SCRIPT type="text/javascript" src="/lib/datatables.min.js"></script>

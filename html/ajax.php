@@ -163,6 +163,7 @@ if($q['action'] == 'user_check') {
 } else if($q['action'] == 'list_counters') {
   $ret=Array();
 
+  $ret['ss'] = return_query("SELECT * FROM ss", "s_id");
   $ret['cs'] = return_query("SELECT * FROM cs WHERE c_deleted=0");
   $ret['ds'] = return_query("SELECT ds.* FROM ds INNER JOIN cs ON c_id=d_fk_c_id WHERE c_deleted=0");
   $ret['crs'] = return_query("SELECT * FROM crs INNER JOIN cs ON c_id=cr_fk_c_id WHERE c_deleted=0");
