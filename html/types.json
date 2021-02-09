@@ -1,27 +1,38 @@
 {
   "gost-c-electro-1p" : {
-    "descr": "Однофазные электросчетчики, двутарифные, протокол опроса ГОСТ 61107, вариант C, в режиме программирования",
-    "stuff": "electro",
-    "stuff_text": "Счетчик электроэнергии",
-    "models" : [
+    "descr": "Однофазные электросчетчики, двутарифные, протокол опроса ГОСТ 61107, вариант C, в режиме программирования"
+    ,"short": "Эл. 1ф, 2т, ГОСТ C"
+    ,"stuff": "electro"
+    ,"stuff_text": "Счетчик электроэнергии"
+    ,"models" : [
       "Энергомера CE102M"
-    ],
-    "reads": [
-      { "var": "ET0PE(1)", "name": "Общие" },
-      { "var": "ET0PE(2)", "name": "День" },
-      { "var": "ET0PE(3)", "name": "Ночь" },
+    ]
+    ,"label": {
+       "html": "&#128161;"
+      ,"css": { "color": "darkorange" }
+    }
+    ,"reads": [
+      { "var": "ET0PE(1)", "name": "Общие", "is_total": true }
+      ,{ "var": "ET0PE(2)", "name": "День", "add_to_total": false }
+      ,{ "var": "ET0PE(3)", "name": "Ночь", "add_to_total": false }
+      ,{ "var": "ET0PE(4)", "name": "Вечер", "add_to_total": false }
     ]
   }
   , "gost-c-electro-3p" : {
-    "descr": "Трехфазные электросчетчики, двутарифные, протокол опроса ГОСТ 61107, вариант C, в режиме программирования",
-    "stuff": "electro",
-    "stuff_text": "Счетчик электроэнергии",
-    "models" : [
-    ],
-    "reads": [
-      { "var": "ET0PE(1)", "name": "Общие" },
-      { "var": "ET0PE(2)", "name": "День" },
-      { "var": "ET0PE(3)", "name": "Ночь" },
+    "descr": "Трехфазные электросчетчики, двутарифные, протокол опроса ГОСТ 61107, вариант C, в режиме программирования"
+    ,"short": "Эл. 3ф, 2т, ГОСТ C"
+    ,"stuff": "electro"
+    ,"stuff_text": "Счетчик электроэнергии"
+    ,"models" : [
+    ]
+    ,"label": {
+       "html": "&#128161;"
+      ,"css": { "color": "darkorange" }
+    }
+    ,"reads": [
+      { "var": "ET0PE(1)", "name": "Общие", "is_total": true }
+      ,{ "var": "ET0PE(2)", "name": "День", "add_to_total": false }
+      ,{ "var": "ET0PE(3)", "name": "Ночь", "add_to_total": false }
     ]
   }
 }

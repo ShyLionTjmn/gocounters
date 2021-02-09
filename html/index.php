@@ -8,6 +8,7 @@
   $title = "Счетчики";
   $js = "counters$version.js";
   $ajax = "ajax$version.php";
+  $local = "local$version.js";
 
   $local_config = "local$version.php";
 
@@ -31,6 +32,7 @@ var AJAX = "<?php echo $ajax; ?>";
 var version = "<?php echo $version; ?>";
 </script>
 <SCRIPT type="text/javascript" src="/mylib/js/myjslib.js"></script>
+<SCRIPT type="text/javascript" src="<?php echo $local; ?>"></script>
 <SCRIPT type="text/javascript" src="<?php echo $js; ?>"></script>
 <STYLE>
 .ns {
