@@ -63,6 +63,15 @@ function audit($line, $act, $table, $q) {
   run_query($query);
 };
 
+$json=@file_get_contents("types.json");
+if($json === false) {
+  error_exit("Cannot read types.json");
+};
+
+$types=json_decode($json, true);
+if($types === NULL) {
+  error_exit("Bad types.json file");
+};
 
 $json=file_get_contents("php://input");
 
@@ -169,6 +178,54 @@ if($q['action'] == 'user_check') {
   $ret['crs'] = return_query("SELECT * FROM crs INNER JOIN cs ON c_id=cr_fk_c_id WHERE c_deleted=0");
 
   ok_exit($ret);
+} else if($q['action'] == 'edit_counter') {
+  require_p('c_id', '/^\d+$/');
+  require_p('c_connect', '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+(?:\/\d+)?$/');
+  require_p('c_type', '/\S/');
+  if(!isset($types[ $q['c_type'] ])) { error_exit("Unknown c_type"); };
+  require_p('c_serial');
+  require_p('c_descr', '/\S/');
+  require_p('c_coords', '/^(?:-?\d{1,3}\.\d{9,}, ?-?\d{1,3}\.\d{9,}|)$/');
+  require_p('c_location', '/\S/');
+  require_p('c_tz', '/\S/');
+  if(@timezone_open($q['c_tz']) === false) { error_exit("Bad timezone ".$q['c_tz']); };
+  require_p('c_paused', '/^(?:0|1)$/');
+  require_p('c_comment');
+  require_p('c_fk_s_id', '/^\d+$/');
+  require_p('c_number');
+  require_list('crs');
+
+  if(isset($types[ $q['c_type'] ]['reads'])) {
+    foreach($types[ $q['c_type'] ]['reads'] as $read) {
+      if(!isset( $q['crs'][ $read['var'] ])) { error_exit("No ".$read['var']." var in crs"); };
+      if(!preg_match('/^\d+(?:\.\d+)?$/', $q['crs'][ $read['var'] ])) {
+        error_exit('crs value not a number');
+      };
+    };
+  };
+
+  $prev_row=return_one('SELECT * FROM cs WHERE c_id='.mq($q['c_id']));
+
+  trans_start();
+
+  run_query("DELETE FROM crs WHERE cr_fk_c_id=".mq($q['c_id']));
+
+  $query="UPDATE cs SET";
+  $query .= " c_connect=".mq($q['c_connect']);
+  $query .= ",c_type=".mq($q['c_type']);
+  $query .= ",c_serial=".mq($q['c_serial']);
+  $query .= ",c_descr=".mq($q['c_descr']);
+  $query .= ",c_coords=".mq($q['c_coords']);
+  $query .= ",c_location=".mq($q['c_location']);
+  $query .= ",c_tz=".mq($q['c_tz']);
+  if($prev_row['c_paused'] == 0 && $q['c_paused'] != 0) {
+    $query .= ",c_paused=".mq(time());
+  } else if($prev_row['c_paused'] != 0 && $q['c_paused'] == 0) {
+    $query .= ",c_paused=0";
+  };
+  $query .= ",c_comment=".mq($q['c_comment']);
+  $query .= ",c_fk_s_id=".mq($q['c_fk_s_id']);
+
 };
 
 error_exit("Unknown action: ".$q['action']);
