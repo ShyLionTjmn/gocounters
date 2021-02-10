@@ -23,7 +23,7 @@ require("local".$version.".php");
 require($_SERVER['DOCUMENT_ROOT']."/mylib/php/myphplib.php");
 
 function error_exit($error) {
-  close_db();
+  close_db(FALSE);
   echo JSON_encode(array("error" => $error));
   exit;
 };
@@ -139,6 +139,7 @@ $user_row=return_one($query,TRUE,"no_auth");
 
 $_SESSION['time']=time();
 $user_self_id=$user_row['user_id'];
+$user_self_login=$user_row['user_login'];
 $user_rights=$user_row['user_rights'];
 $user_name=$user_row['user_name'];
 
@@ -179,13 +180,17 @@ if($q['action'] == 'user_check') {
 
   ok_exit($ret);
 } else if($q['action'] == 'edit_counter') {
+  require_right(R_SUPER);
+
   require_p('c_id', '/^\d+$/');
+  $act_id = $q['c_id'];
+
   require_p('c_connect', '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+(?:\/\d+)?$/');
   require_p('c_type', '/\S/');
   if(!isset($types[ $q['c_type'] ])) { error_exit("Unknown c_type"); };
   require_p('c_serial');
   require_p('c_descr', '/\S/');
-  require_p('c_coords', '/^(?:-?\d{1,3}\.\d{9,}, ?-?\d{1,3}\.\d{9,}|)$/');
+  require_p('c_coords', '/^(?:-?\d{1,3}(?:\.\d+)?, ?-?\d{1,3}(?:\.\d+)?|)$/');
   require_p('c_location', '/\S/');
   require_p('c_tz', '/\S/');
   if(@timezone_open($q['c_tz']) === false) { error_exit("Bad timezone ".$q['c_tz']); };
@@ -204,11 +209,9 @@ if($q['action'] == 'user_check') {
     };
   };
 
-  $prev_row=return_one('SELECT * FROM cs WHERE c_id='.mq($q['c_id']));
+  $prev_row=return_one('SELECT * FROM cs WHERE c_id='.mq($act_id), TRUE);
 
   trans_start();
-
-  run_query("DELETE FROM crs WHERE cr_fk_c_id=".mq($q['c_id']));
 
   $query="UPDATE cs SET";
   $query .= " c_connect=".mq($q['c_connect']);
@@ -225,7 +228,137 @@ if($q['action'] == 'user_check') {
   };
   $query .= ",c_comment=".mq($q['c_comment']);
   $query .= ",c_fk_s_id=".mq($q['c_fk_s_id']);
+  $query .= ",c_number=".mq($q['c_number']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
 
+  $query .= " WHERE c_id=".mq($act_id);
+
+  run_query($query);
+
+  run_query("DELETE FROM crs WHERE cr_fk_c_id=".mq($act_id));
+
+  
+  if(isset($types[ $q['c_type'] ]['reads'])) {
+    foreach($types[ $q['c_type'] ]['reads'] as $read) {
+      $var_name=$read['var'];
+      $var_value=$q['crs'][ $read['var'] ];
+      
+      $query = "INSERT INTO crs SET";
+      $query .= " cr_fk_c_id=".mq($act_id);
+      $query .= ",cr_name=".mq($var_name);
+      $query .= ",cr_value=".mq($var_value);
+      $query .= ",change_by=".mq($user_self_login);
+      $query .= ",ts=$time";
+
+      run_query($query);
+    };
+  };
+
+  $ret=return_one('SELECT * FROM cs WHERE c_id='.mq($act_id), TRUE);
+  $ds = return_query("SELECT * FROM ds WHERE d_fk_c_id=".mq($act_id), 'd_name');
+  if(count($ds) > 0) {
+    $ret['ds'] = $ds;
+  };
+  $ret['crs'] = return_query("SELECT * FROM crs WHERE cr_fk_c_id=".mq($act_id), 'cr_name');
+  ok_exit($ret);
+} else if($q['action'] == 'add_counter') {
+  require_right(R_SUPER);
+
+  require_p('c_connect', '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+(?:\/\d+)?$/');
+  require_p('c_type', '/\S/');
+  if(!isset($types[ $q['c_type'] ])) { error_exit("Unknown c_type"); };
+  require_p('c_serial');
+  require_p('c_descr', '/\S/');
+  require_p('c_coords', '/^(?:-?\d{1,3}(?:\.\d+)?, ?-?\d{1,3}(?:\.\d+)?|)$/');
+  require_p('c_location', '/\S/');
+  require_p('c_tz', '/\S/');
+  if(@timezone_open($q['c_tz']) === false) { error_exit("Bad timezone ".$q['c_tz']); };
+  require_p('c_paused', '/^(?:0|1)$/');
+  require_p('c_comment');
+  require_p('c_fk_s_id', '/^\d+$/');
+  require_p('c_number');
+  require_list('crs');
+
+  if(isset($types[ $q['c_type'] ]['reads'])) {
+    foreach($types[ $q['c_type'] ]['reads'] as $read) {
+      if(!isset( $q['crs'][ $read['var'] ])) { error_exit("No ".$read['var']." var in crs"); };
+      if(!preg_match('/^\d+(?:\.\d+)?$/', $q['crs'][ $read['var'] ])) {
+        error_exit('crs value not a number');
+      };
+    };
+  };
+
+  trans_start();
+
+  $query="INSERT INTO cs SET";
+  $query .= " c_connect=".mq($q['c_connect']);
+  $query .= ",c_type=".mq($q['c_type']);
+  $query .= ",c_serial=".mq($q['c_serial']);
+  $query .= ",c_descr=".mq($q['c_descr']);
+  $query .= ",c_coords=".mq($q['c_coords']);
+  $query .= ",c_location=".mq($q['c_location']);
+  $query .= ",c_tz=".mq($q['c_tz']);
+  if($q['c_paused'] != 0) {
+    $query .= ",c_paused=".mq(time());
+  } else {
+    $query .= ",c_paused=0";
+  };
+  $query .= ",c_comment=".mq($q['c_comment']);
+  $query .= ",c_fk_s_id=".mq($q['c_fk_s_id']);
+  $query .= ",c_number=".mq($q['c_number']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
+
+  run_query($query);
+
+  $act_id = insert_id();
+  
+  if(isset($types[ $q['c_type'] ]['reads'])) {
+    foreach($types[ $q['c_type'] ]['reads'] as $read) {
+      $var_name=$read['var'];
+      $var_value=$q['crs'][ $read['var'] ];
+      
+      $query = "INSERT INTO crs SET";
+      $query .= " cr_fk_c_id=".mq($act_id);
+      $query .= ",cr_name=".mq($var_name);
+      $query .= ",cr_value=".mq($var_value);
+      $query .= ",change_by=".mq($user_self_login);
+      $query .= ",ts=$time";
+
+      run_query($query);
+    };
+  };
+
+  $ret=return_one('SELECT * FROM cs WHERE c_id='.mq($act_id), TRUE);
+  $ret['crs'] = return_query("SELECT * FROM crs WHERE cr_fk_c_id=".mq($act_id), 'cr_name');
+  ok_exit($ret);
+} else if($q['action'] == 'delete_counter') {
+  require_right(R_SUPER);
+
+  require_p('c_id', '/^\d+$/');
+  $act_id = $q['c_id'];
+
+  trans_start();
+
+  $data_count=return_single("SELECT COUNT(*) FROM ds WHERE d_fk_c_id=".mq($act_id), TRUE);
+  $reads_count=return_single("SELECT COUNT(*) FROM crs WHERE cr_fk_c_id=".mq($act_id), TRUE);
+
+  if(($data_count + $reads_count) > 0) {
+    $query = "UPDATE cs SET";
+    $query .= " c_deleted=$time";
+    $query .= ",change_by=".mq($user_self_login);
+    $query .= ",ts=$time";
+
+    $query .= " WHERE c_id=".mq($act_id);
+
+    run_query($query);
+  } else {
+    run_query("DELETE FROM crs WHERE cr_fk_c_id=".mq($act_id));
+    run_query("DELETE FROM cs WHERE c_id=".mq($act_id));
+  };
+
+  ok_exit("done");
 };
 
 error_exit("Unknown action: ".$q['action']);

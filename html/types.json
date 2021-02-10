@@ -15,7 +15,6 @@
       { "var": "ET0PE(1)", "name": "Общие", "is_total": true }
       ,{ "var": "ET0PE(2)", "name": "День", "add_to_total": false }
       ,{ "var": "ET0PE(3)", "name": "Ночь", "add_to_total": false }
-      ,{ "var": "ET0PE(4)", "name": "Вечер", "add_to_total": false }
     ]
   }
   , "gost-c-electro-3p" : {
