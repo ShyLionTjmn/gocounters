@@ -101,17 +101,20 @@ if($q['action'] == 'login') {
   require_p('password');
 
   unset($_SESSION['login']);
-  unset($_SESSION['password']);
+  unset($_SESSION['pc']);
   unset($_SESSION['time']);
 #error_exit("Boo at ".__LINE__);
   $check_login=$q['login'];
-  $check_password=$q['password'];
 
-  $query="SELECT * FROM users WHERE user_login='".mysqli_real_escape_string($db,$check_login)."' AND user_md5_password=MD5('".mysqli_real_escape_string($db,$check_password)."')";
+  $query="SELECT * FROM users WHERE user_login=".mq($check_login)." AND user_md5_password=MD5(".mq($q['password']).") AND user_deleted=0";
   $user_row=return_one($query,TRUE,"Неверно указан логин или пароль");
 
+  if($user_row['user_blocked'] != 0) { error_exit("Пользователь заблокирован"); };
+
+  run_query("UPDATE users SET user_last_login=$time WHERE user_id=".mq($user_row['user_id']));
+
   $_SESSION['login']=$check_login;
-  $_SESSION['password']=$check_password;
+  $_SESSION['pc']=$user_row['user_password_count'];
   $_SESSION['time']=time();
 
   ok_exit("ok");
@@ -120,22 +123,24 @@ if($q['action'] == 'login') {
 if($q['action'] == 'logout') {
 
   unset($_SESSION['login']);
-  unset($_SESSION['password']);
+  unset($_SESSION['pc']);
   unset($_SESSION['time']);
 
   ok_exit("ok");
 };
 
-if(isset($_SESSION['login']) && isset($_SESSION['password']) && isset($_SESSION['time']) && (time() - $_SESSION['time']) < $MAX_SESSION_AGE) {
+if(isset($_SESSION['login']) && isset($_SESSION['pc']) && isset($_SESSION['time']) && (time() - $_SESSION['time']) < $MAX_SESSION_AGE) {
   $check_login=$_SESSION['login'];
-  $check_password=$_SESSION['password'];
+  $check_pc=$_SESSION['pc'];
 } else {
   error_exit("no_auth");
 };
 
-$query="SELECT * FROM users WHERE user_login='".mysqli_real_escape_string($db,$check_login)."' AND user_md5_password=MD5('".mysqli_real_escape_string($db,$check_password)."')";
+$query="SELECT * FROM users WHERE user_login=".mq($check_login)." AND user_password_count=".mq($check_pc)." AND user_deleted=0";
 $user_row=return_one($query,TRUE,"no_auth");
+if($user_row['user_blocked'] != 0) { error_exit("Пользователь заблокирован"); };
 
+run_query("UPDATE users SET user_last_activity=$time WHERE user_id=".mq($user_row['user_id']));
 
 $_SESSION['time']=time();
 $user_self_id=$user_row['user_id'];
@@ -359,6 +364,78 @@ if($q['action'] == 'user_check') {
   };
 
   ok_exit("done");
+} else if($q['action'] == 'list_suppliers') {
+  $ret=return_query("SELECT ss.*,(SELECT COUNT(*) FROM cs WHERE c_deleted=0 AND c_fk_s_id=s_id) as used_in FROM ss WHERE s_deleted=0", "s_id");
+  ok_exit($ret);
+} else if($q['action'] == 'add_supplier') {
+  require_right(R_SUPER);
+
+  require_p('s_short_name', '/\S/');
+  require_p('s_full_name');
+  require_p('s_contacts');
+
+  $query="INSERT INTO ss SET";
+  $query .= " s_short_name=".mq($q['s_short_name']);
+  $query .= ",s_full_name=".mq($q['s_full_name']);
+  $query .= ",s_contacts=".mq($q['s_contacts']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
+
+  trans_start();
+
+  run_query($query);
+
+  $act_id = insert_id();
+  
+  $ret=return_one('SELECT ss.*,(SELECT COUNT(*) FROM cs WHERE c_deleted=0 AND c_fk_s_id=s_id) as used_in FROM ss WHERE s_id='.mq($act_id), TRUE);
+  ok_exit($ret);
+} else if($q['action'] == 'edit_supplier') {
+  require_right(R_SUPER);
+
+  require_p('s_id', '/^\d+$/');
+  $act_id=$q['s_id'];
+  require_p('s_short_name', '/\S/');
+  require_p('s_full_name');
+  require_p('s_contacts');
+
+  $query="UPDATE ss SET";
+  $query .= " s_short_name=".mq($q['s_short_name']);
+  $query .= ",s_full_name=".mq($q['s_full_name']);
+  $query .= ",s_contacts=".mq($q['s_contacts']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
+  $query .= " WHERE s_id=".mq($act_id);
+
+  trans_start();
+
+  run_query($query);
+  
+  $ret=return_one('SELECT ss.*,(SELECT COUNT(*) FROM cs WHERE c_deleted=0 AND c_fk_s_id=s_id) as used_in FROM ss WHERE s_id='.mq($act_id), TRUE);
+  ok_exit($ret);
+} else if($q['action'] == 'delete_supplier') {
+  require_right(R_SUPER);
+
+  require_p('s_id', '/^\d+$/');
+  $act_id=$q['s_id'];
+
+  $c=return_single("SELECT COUNT(*) FROM cs WHERE c_deleted=0 AND c_fk_s_id=".mq($act_id), TRUE);
+
+  if($c > 0) { error_exit("Поставщик выбран в $c счетчиках, удаление невозможно"); };
+
+  $c=return_single("SELECT COUNT(*) FROM cs WHERE c_fk_s_id=".mq($act_id), TRUE);
+  if($c == 0) {
+    run_query('DELETE FROM ss WHERE s_id='.mq($act_id));
+  } else {
+    run_query('UPDATE ss SET s_deleted=$time WHERE s_id='.mq($act_id));
+  };
+
+  ok_exit("done");
+} else if($q['action'] == 'list_users') {
+  require_right(R_SUPER);
+
+  $ret=return_query("SELECT user_id, user_login,user_rights,user_name,user_last_login,user_last_activity,user_blocked,user_block_reason,ts,change_by"
+                   ." FROM users WHERE user_deleted=0", "user_id");
+  ok_exit($ret);
 };
 
 error_exit("Unknown action: ".$q['action']);

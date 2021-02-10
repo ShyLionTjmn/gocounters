@@ -10,6 +10,7 @@ CREATE TABLE ss ( # Таблица поставщиков услуг
   s_short_name VARCHAR(128) NOT NULL, # Кратое название при отображении в списках
   s_full_name VARCHAR(1024) NOT NULL, # Полное название
   s_contacts VARCHAR(1024) NOT NULL, # Контактная информация
+  s_deleted BIGINT NOT NULL, # 0 - в работе, time() - время когда был удален. На самом деле не удаляется, а скрывается из интерфейса для сохранения истории и т.п.
   ts BIGINT NOT NULL, #
   change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   PRIMARY KEY pk_s_id(s_id),
@@ -25,7 +26,7 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   c_location VARCHAR(256) NOT NULL, # Словесное описание места установки
   c_coords VARCHAR(256) NOT NULL, # Географические координаты для системы отображения на карте, формат задается фронтендом
   c_descr VARCHAR(256) NOT NULL, # Словесное описание
-  c_fk_s_id INTEGER, # Поставщик услуг
+  c_fk_s_id INTEGER NOT NULL, # Поставщик услуг
   c_number VARCHAR(256) NOT NULL, # Номер в системе учета поставщика услуг
   c_comment VARCHAR(1024) NOT NULL, # Дополнительный коментарий, где техподдержка может писать пояснения, текущие проблемы и т.п.
   c_model VARCHAR(256) NOT NULL, # Модель, заполняется демоном опроса, автоматически
@@ -40,7 +41,7 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   UNIQUE KEY uk_c_connect(c_connect, c_deleted),
   PRIMARY KEY pk_c_id(c_id),
-  FOREIGN KEY fk_c_fk_s_id(c_fk_s_id) REFERENCES ss(s_id) ON UPDATE CASCADE ON DELETE SET NULL
+  FOREIGN KEY fk_c_fk_s_id(c_fk_s_id) REFERENCES ss(s_id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 CREATE TABLE crs ( # таблица коррекции показаний, прибавляется при отображении
@@ -82,10 +83,16 @@ CREATE TABLE users ( # Пользователи
   user_id INTEGER NOT NULL AUTO_INCREMENT,
   user_login VARCHAR(128) NOT NULL,
   user_md5_password VARCHAR(256) NOT NULL,
+  user_password_count INTEGER NOT NULL, # счетчик изменений пароля, для контроля сеанса
   user_rights VARCHAR(1024) NOT NULL,
   user_name VARCHAR(256) NOT NULL,
+  user_last_login BIGINT NOT NULL, # точное время крайней авторизации
+  user_last_activity BIGINT NOT NULL, # точное время крайней активности
+  user_blocked INTEGER NOT NULL, # 0 - в работе, time() - время когда был заблокирован
+  user_block_reason VARCHAR(256) NOT NULL, # причина блокировки
+  user_deleted BIGINT NOT NULL, # 0 - в работе, time() - время когда был удален. На самом деле не удаляется, а скрывается из интерфейса для сохранения истории и т.п.
   ts BIGINT NOT NULL, #
   change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
   PRIMARY KEY pk_user_id(user_id),
-  UNIQUE KEY uk_user_login(user_login)
+  UNIQUE KEY uk_user_login(user_deleted,user_login)
 );
