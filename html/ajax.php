@@ -10,6 +10,9 @@ header("Expires: 0");
 
 
 const R_SUPER="super";
+
+$rights_list[R_SUPER]="Супр";
+
 $MAX_SESSION_AGE=36000;
 
 $time=time();
@@ -435,6 +438,94 @@ if($q['action'] == 'user_check') {
 
   $ret=return_query("SELECT user_id, user_login,user_rights,user_name,user_last_login,user_last_activity,user_blocked,user_block_reason,ts,change_by"
                    ." FROM users WHERE user_deleted=0", "user_id");
+  ok_exit($ret);
+} else if($q['action'] == 'add_user') {
+  require_right(R_SUPER);
+
+  require_p('user_login', '/^[a-zA-Z0-9_\-\.\@]+$/');
+  require_p('user_name', '/\S/');
+  require_p('user_pass', '/\S/');
+  require_p('user_blocked', '/^(?:0|1)$/');
+  require_p('user_block_reason');
+  require_p('user_rights', '/^ *(?:[a-zA-Z0-9_]+(?: *, *[a-zA-Z0-9_]+)*)? *?$/');
+
+  $rs=trim($q['user_rights']);
+  if($rs != "") {
+    $ra=explode(",", $rs);
+    foreach($ra as $r) {
+      $right=trim($r);
+      if(!isset($rights_list[$right])) { error_exit("Unknown right ".$right); };
+      if(!has_right($right)) { error_exit("Нельзя делегировать права, которых у Вас нет"); };
+    };
+  };
+
+  $query="INSERT INTO users SET";
+  $query .= " user_login=".mq(strtolower($q['user_login']));
+  $query .= ",user_name=".mq($q['user_name']);
+  $query .= ",user_rights=".mq($rs);
+  $query .= ",user_md5_password=MD5(".mq($q['user_pass']).")";
+  if($q['user_blocked'] != 0) { $q['user_blocked'] = $time; };
+  $query .= ",user_blocked=".mq($q['user_blocked']);
+  $query .= ",user_block_reason=".mq($q['user_block_reason']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
+
+  trans_start();
+
+  run_query($query);
+
+  $act_id = insert_id();
+  
+  $ret=return_one("SELECT user_id, user_login,user_rights,user_name,user_last_login,user_last_activity,user_blocked,user_block_reason,ts,change_by"
+                 ." FROM users"
+                 ." WHERE user_id=".mq($act_id), TRUE);
+  ok_exit($ret);
+} else if($q['action'] == 'edit_user') {
+  require_right(R_SUPER);
+  require_p('user_id', '/^\d+$/');
+  $act_id=$q['user_id'];
+
+  require_p('user_login', '/^[a-zA-Z0-9_\-\.\@]+$/');
+  require_p('user_name', '/\S/');
+  require_p('user_blocked', '/^(?:0|1)$/');
+  require_p('user_block_reason');
+  require_p('user_rights', '/^ *(?:[a-zA-Z0-9_]+(?: *, *[a-zA-Z0-9_]+)*)? *?$/');
+
+  if(isset($q['user_pass'])) {
+    require_p('user_pass', '/\S/');
+  };
+
+  $prev_row=return_one("SELECT * FROM users WHERE user_id=".mq($act_id), TRUE);
+
+  $rs=trim($q['user_rights']);
+  if($rs != "") {
+    $ra=explode(",", $rs);
+    foreach($ra as $r) {
+      $right=trim($r);
+      if(!isset($rights_list[$right])) { error_exit("Unknown right ".$right); };
+
+      if(!has_right($right) && !has_right($right, $prev_row['user_rights'])) { error_exit("Нельзя делегировать права, которых у Вас нет"); };
+    };
+  };
+
+  $query="INSERT INTO users SET";
+  $query .= " user_login=".mq(strtolower($q['user_login']));
+  $query .= ",user_name=".mq($q['user_name']);
+  $query .= ",user_rights=".mq($rs);
+  $query .= ",user_md5_password=MD5(".mq($q['user_pass']).")";
+  if($q['user_blocked'] != 0) { $q['user_blocked'] = $time; };
+  $query .= ",user_blocked=".mq($q['user_blocked']);
+  $query .= ",user_block_reason=".mq($q['user_block_reason']);
+  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",ts=$time";
+
+  trans_start();
+
+  run_query($query);
+  
+  $ret=return_one("SELECT user_id, user_login,user_rights,user_name,user_last_login,user_last_activity,user_blocked,user_block_reason,ts,change_by"
+                 ." FROM users"
+                 ." WHERE user_id=".mq($act_id), TRUE);
   ok_exit($ret);
 };
 
