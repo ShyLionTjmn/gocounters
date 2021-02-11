@@ -237,7 +237,7 @@ if($q['action'] == 'user_check') {
   $query .= ",c_comment=".mq($q['c_comment']);
   $query .= ",c_fk_s_id=".mq($q['c_fk_s_id']);
   $query .= ",c_number=".mq($q['c_number']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
 
   $query .= " WHERE c_id=".mq($act_id);
@@ -256,7 +256,7 @@ if($q['action'] == 'user_check') {
       $query .= " cr_fk_c_id=".mq($act_id);
       $query .= ",cr_name=".mq($var_name);
       $query .= ",cr_value=".mq($var_value);
-      $query .= ",change_by=".mq($user_self_login);
+      $query .= ",change_by=".mq($user_self_id);
       $query .= ",ts=$time";
 
       run_query($query);
@@ -315,7 +315,7 @@ if($q['action'] == 'user_check') {
   $query .= ",c_comment=".mq($q['c_comment']);
   $query .= ",c_fk_s_id=".mq($q['c_fk_s_id']);
   $query .= ",c_number=".mq($q['c_number']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
 
   run_query($query);
@@ -331,7 +331,7 @@ if($q['action'] == 'user_check') {
       $query .= " cr_fk_c_id=".mq($act_id);
       $query .= ",cr_name=".mq($var_name);
       $query .= ",cr_value=".mq($var_value);
-      $query .= ",change_by=".mq($user_self_login);
+      $query .= ",change_by=".mq($user_self_id);
       $query .= ",ts=$time";
 
       run_query($query);
@@ -355,7 +355,7 @@ if($q['action'] == 'user_check') {
   if(($data_count + $reads_count) > 0) {
     $query = "UPDATE cs SET";
     $query .= " c_deleted=$time";
-    $query .= ",change_by=".mq($user_self_login);
+    $query .= ",change_by=".mq($user_self_id);
     $query .= ",ts=$time";
 
     $query .= " WHERE c_id=".mq($act_id);
@@ -381,7 +381,7 @@ if($q['action'] == 'user_check') {
   $query .= " s_short_name=".mq($q['s_short_name']);
   $query .= ",s_full_name=".mq($q['s_full_name']);
   $query .= ",s_contacts=".mq($q['s_contacts']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
 
   trans_start();
@@ -405,7 +405,7 @@ if($q['action'] == 'user_check') {
   $query .= " s_short_name=".mq($q['s_short_name']);
   $query .= ",s_full_name=".mq($q['s_full_name']);
   $query .= ",s_contacts=".mq($q['s_contacts']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
   $query .= " WHERE s_id=".mq($act_id);
 
@@ -467,7 +467,7 @@ if($q['action'] == 'user_check') {
   if($q['user_blocked'] != 0) { $q['user_blocked'] = $time; };
   $query .= ",user_blocked=".mq($q['user_blocked']);
   $query .= ",user_block_reason=".mq($q['user_block_reason']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
 
   trans_start();
@@ -508,16 +508,32 @@ if($q['action'] == 'user_check') {
     };
   };
 
-  $query="INSERT INTO users SET";
+  $prev_rs=trim($prev_row['user_rights']);
+  if($prev_rs != "") {
+    foreach(explode(",", $prev_rs) as $r) {
+      $right=trim($r);
+      if(!has_right($right) && !has_right($right, $rs)) { error_exit("Нельзя забрать права, которых у Вас нет"); };
+    };
+  };
+
+  $query="UPDATE users SET";
   $query .= " user_login=".mq(strtolower($q['user_login']));
   $query .= ",user_name=".mq($q['user_name']);
   $query .= ",user_rights=".mq($rs);
-  $query .= ",user_md5_password=MD5(".mq($q['user_pass']).")";
-  if($q['user_blocked'] != 0) { $q['user_blocked'] = $time; };
-  $query .= ",user_blocked=".mq($q['user_blocked']);
+  if(isset($q['user_pass'])) {
+    $query .= ",user_md5_password=MD5(".mq($q['user_pass']).")";
+    $query .= ",user_password_count=user_password_count+1";
+  };
+  if($q['user_blocked'] != 0 && $prev_row['user_blocked'] == 0) {
+    $query .= ",user_blocked=".mq($time);
+  } else if($q['user_blocked'] == 0) {
+    $query .= ",user_blocked=0";
+  };
   $query .= ",user_block_reason=".mq($q['user_block_reason']);
-  $query .= ",change_by=".mq($user_self_login);
+  $query .= ",change_by=".mq($user_self_id);
   $query .= ",ts=$time";
+
+  $query .= " WHERE user_id=".mq($act_id);
 
   trans_start();
 
@@ -527,6 +543,23 @@ if($q['action'] == 'user_check') {
                  ." FROM users"
                  ." WHERE user_id=".mq($act_id), TRUE);
   ok_exit($ret);
+} else if($q['action'] == 'delete_user') {
+  require_right(R_SUPER);
+  require_p('user_id', '/^\d+$/');
+  $act_id=$q['user_id'];
+
+  $prev_row=return_one("SELECT * FROM users WHERE user_id=".mq($act_id), TRUE);
+
+  if($act_id == $user_self_id) { error_exit("Нельзя удалить собственную учетную запись"); };
+
+  $query="UPDATE users SET";
+  $query .= " user_deleted=".mq($time);
+  $query .= " WHERE user_id=".mq($act_id);
+
+  run_query($query);
+
+  ok_exit("done");
+
 };
 
 error_exit("Unknown action: ".$q['action']);

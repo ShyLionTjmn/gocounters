@@ -1,9 +1,28 @@
-DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS ds;
 DROP TABLE IF EXISTS rs;
 DROP TABLE IF EXISTS crs;
 DROP TABLE IF EXISTS cs;
 DROP TABLE IF EXISTS ss;
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users ( # Пользователи
+  user_id INTEGER NOT NULL AUTO_INCREMENT,
+  user_login VARCHAR(128) NOT NULL,
+  user_md5_password VARCHAR(256) NOT NULL,
+  user_password_count INTEGER NOT NULL, # счетчик изменений пароля, для контроля сеанса
+  user_rights VARCHAR(1024) NOT NULL,
+  user_name VARCHAR(256) NOT NULL,
+  user_last_login BIGINT NOT NULL, # точное время крайней авторизации
+  user_last_activity BIGINT NOT NULL, # точное время крайней активности
+  user_blocked INTEGER NOT NULL, # 0 - в работе, time() - время когда был заблокирован
+  user_block_reason VARCHAR(256) NOT NULL, # причина блокировки
+  user_deleted BIGINT NOT NULL, # 0 - в работе, time() - время когда был удален. На самом деле не удаляется, а скрывается из интерфейса для сохранения истории и т.п.
+  ts BIGINT NOT NULL, #
+  change_by INTEGER NOT NULL, # логин пользователя, внесшего последние изменения
+  PRIMARY KEY pk_user_id(user_id),
+  FOREIGN KEY fk_change_by(change_by) REFERENCES users(user_id),
+  UNIQUE KEY uk_user_login(user_deleted,user_login)
+);
 
 CREATE TABLE ss ( # Таблица поставщиков услуг
   s_id  INTEGER NOT NULL AUTO_INCREMENT,
@@ -12,7 +31,8 @@ CREATE TABLE ss ( # Таблица поставщиков услуг
   s_contacts VARCHAR(1024) NOT NULL, # Контактная информация
   s_deleted BIGINT NOT NULL, # 0 - в работе, time() - время когда был удален. На самом деле не удаляется, а скрывается из интерфейса для сохранения истории и т.п.
   ts BIGINT NOT NULL, #
-  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
+  change_by INTEGER NOT NULL, # логин пользователя, внесшего последние изменения
+  FOREIGN KEY fk_change_by(change_by) REFERENCES users(user_id),
   PRIMARY KEY pk_s_id(s_id),
   UNIQUE KEY uk_s_short_name(s_short_name)
 );
@@ -38,7 +58,8 @@ CREATE TABLE cs ( # Таблица счетчиков ЖКХ
   c_error VARCHAR(256) NOT NULL, # текст крайней ошибки
   c_tz VARCHAR(256) NOT NULL, # Временная зона, согласно которой будут посуточно сохраняться показания
   ts BIGINT NOT NULL, #
-  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
+  change_by INTEGER NOT NULL, # логин пользователя, внесшего последние изменения
+  FOREIGN KEY fk_change_by(change_by) REFERENCES users(user_id),
   UNIQUE KEY uk_c_connect(c_connect, c_deleted),
   PRIMARY KEY pk_c_id(c_id),
   FOREIGN KEY fk_c_fk_s_id(c_fk_s_id) REFERENCES ss(s_id) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -50,7 +71,8 @@ CREATE TABLE crs ( # таблица коррекции показаний, пр�
   cr_value DECIMAL(20,3) NOT NULL, # значение коррекции
   cr_fk_c_id INTEGER NOT NULL,
   ts BIGINT NOT NULL, #
-  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
+  change_by INTEGER NOT NULL, # логин пользователя, внесшего последние изменения
+  FOREIGN KEY fk_change_by(change_by) REFERENCES users(user_id),
   PRIMARY KEY pk_cr_id(cr_id),
   FOREIGN KEY fk_cr_fk_c_id(cr_fk_c_id) REFERENCES cs(c_id),
   UNIQUE KEY uk_cr_fk_c_id_cr_name(cr_fk_c_id,cr_name)
@@ -79,20 +101,3 @@ CREATE TABLE ds ( # Таблица крайних значений информ�
   UNIQUE KEY uk_d_fk_c_id_d_name(d_fk_c_id,d_name)
 );
 
-CREATE TABLE users ( # Пользователи
-  user_id INTEGER NOT NULL AUTO_INCREMENT,
-  user_login VARCHAR(128) NOT NULL,
-  user_md5_password VARCHAR(256) NOT NULL,
-  user_password_count INTEGER NOT NULL, # счетчик изменений пароля, для контроля сеанса
-  user_rights VARCHAR(1024) NOT NULL,
-  user_name VARCHAR(256) NOT NULL,
-  user_last_login BIGINT NOT NULL, # точное время крайней авторизации
-  user_last_activity BIGINT NOT NULL, # точное время крайней активности
-  user_blocked INTEGER NOT NULL, # 0 - в работе, time() - время когда был заблокирован
-  user_block_reason VARCHAR(256) NOT NULL, # причина блокировки
-  user_deleted BIGINT NOT NULL, # 0 - в работе, time() - время когда был удален. На самом деле не удаляется, а скрывается из интерфейса для сохранения истории и т.п.
-  ts BIGINT NOT NULL, #
-  change_by VARCHAR(256) NOT NULL, # логин пользователя, внесшего последние изменения
-  PRIMARY KEY pk_user_id(user_id),
-  UNIQUE KEY uk_user_login(user_deleted,user_login)
-);
