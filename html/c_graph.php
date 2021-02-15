@@ -1,5 +1,23 @@
 <?php
 
+$error_png_dir="/var/www/html";
+$MAX_SESSION_AGE=36000;
+
+$time=time();
+
+session_name("counters");
+session_start();
+
+if(!isset($_SESSION['login']) || !isset($_SESSION['pc']) || !isset($_SESSION['time']) || (time() - $_SESSION['time']) >= $MAX_SESSION_AGE) {
+  if(isset($_REQUEST['debug'])) { error_text("No auth"); };
+  error_exit("no_auth");
+};
+
+$_SESSION['time']=time();
+
+
+setlocale(LC_CTYPE, "en_US.UTF-8");
+
 $cache_off=false;
 if(isset($_REQUEST['no_cache'])) {
   $cache_off=true;
@@ -12,11 +30,9 @@ function dumper($var) {
   return $dump_str;
 };
 
-$error_png_dir="/var/www/html";
 
 function error_exit($error) {
   global $error_png_dir;
-  
   if(!isset($error)) {
     $error=$error_png_dir."/error.png";
   } else {
@@ -142,6 +158,18 @@ if(!isset($_REQUEST['c_id']) || !preg_match('/^[0-9]+$/', $_REQUEST['c_id'])) {
   error_exit(null);
 };
 
+$corr=0.00;
+
+if(isset($_REQUEST['corr'])) {
+  if(!preg_match('/^[0-9]+(?:\.[0-9]+)?$/', $_REQUEST['corr'])) {
+    if(isset($_REQUEST['debug'])) { error_text(__LINE__); };
+    error_exit(null);
+  };
+  $corr=$_REQUEST['corr'];
+};
+
+$png_end .= "_corr_$corr";
+
 $c_id=$_REQUEST['c_id'];
 $var=$_REQUEST['var'];
 
@@ -152,21 +180,26 @@ $rrd=$rrd_root.sprintf("%08d", $c_id)."_".$var.".rrd";
   
 if(is_file($rrd)) {
 
-  $cmd .= " DEF:val=$rrd:$var:AVERAGE";
+  $cmd .= " DEF:val_orig=$rrd:$var:AVERAGE";
+  $cmd .= " CDEF:val=val_orig,$corr,+";
   if(!$comp) {
     $cmd .= " LINE:val#009900:";
     $cmd .= " VDEF:valmin=val,MINIMUM";
     $cmd .= " VDEF:valavg=val,AVERAGE";
     $cmd .= " VDEF:valmax=val,MAXIMUM";
     $cmd .= " VDEF:vallast=val,LAST";
+    $cmd .= " CDEF:unkns=val,UN,INF,0,IF";
+    $cmd .= " AREA:unkns#BBBBBB:";
     $cmd .= " COMMENT:'           Min       Avg        Max       Last\\n'";
-    $cmd .= " COMMENT:'КВт/ч\\t'";
+    $cmd .= " ".escapeshellarg("COMMENT:".$_REQUEST['unit']."\\t");
     $cmd .= " GPRINT:valmin:'%.1lf".($exact?"":"%s")."\\t'";
     $cmd .= " GPRINT:valavg:'%.1lf".($exact?"":"%s")."\\t'";
     $cmd .= " GPRINT:valmax:'%.1lf".($exact?"":"%s")."\\t'";
     $cmd .= " GPRINT:vallast:'%.1lf".($exact?"":"%s")."\\n'";
   } else {
     $cmd .= " LINE:val#009900:";
+    $cmd .= " CDEF:unkns=val,UN,INF,0,IF";
+    $cmd .= " AREA:unkns#BBBBBB:";
     $cmd .= " COMMENT:''";
   };
 
