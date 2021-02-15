@@ -560,6 +560,29 @@ if($q['action'] == 'user_check') {
 
   ok_exit("done");
 
+} else if($q['action'] == 'get_counter_info') {
+  require_p('c_id', '/^\d+$/');
+  $act_id=$q['c_id'];
+
+  $query="SELECT * FROM cs WHERE c_id=".mq($act_id);
+
+  $ret=return_one($query, TRUE);
+
+  $query="SELECT * FROM ds WHERE d_fk_c_id=".mq($act_id);
+
+
+  $ret['ds']=return_query($query, "d_name");
+
+  $crs=return_query("SELECT * FROM crs WHERE cr_fk_c_id=".mq($act_id), "cr_name");
+  if(count($crs) > 0) {
+    $ret['crs']=$crs;
+  };
+
+  $ret['user']=return_one("SELECT user_login, user_name, user_deleted FROM users WHERE user_id=".mq($ret['change_by']), TRUE);
+
+  $ret['ss']=return_one("SELECT * FROM ss WHERE s_id=".mq($ret['c_fk_s_id']), TRUE);
+
+  ok_exit($ret);
 };
 
 error_exit("Unknown action: ".$q['action']);
