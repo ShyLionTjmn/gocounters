@@ -52,4 +52,32 @@
       ,{ "var": "DATE_()", "name": "Дата (н.д.м.г)" }
     ]
   }
+  , "gost-c-electro-3p-EM301" : {
+    "descr": "Трехфазные электросчетчики, Энергомера 301, двутарифные, протокол опроса ГОСТ 61107, вариант C, в режиме программирования"
+    ,"short": "Эл. 3ф, ЭМ301, 2т, ГОСТ C"
+    ,"stuff": "electro"
+    ,"stuff_text": "Счетчик электроэнергии"
+    ,"models" : [
+    ]
+    ,"label": {
+       "html": "&#128161;"
+      ,"css": { "color": "darkorange" }
+    }
+    ,"reads": [
+      { "var": "ET0PE(1)", "name": "Общие", "is_total": true, "graph_unit": "КВт/ч", "graph_var": "ET0PE_1_" }
+      ,{ "var": "ET0PE(2)", "name": "День", "add_to_total": false, "graph_unit": "КВт/ч", "graph_var": "ET0PE_2_" }
+      ,{ "var": "ET0PE(3)", "name": "Ночь", "add_to_total": false, "graph_unit": "КВт/ч", "graph_var": "ET0PE_3_" }
+    ]
+    ,"data": [
+      { "var": "VOLTA(1)", "name": "Напряжение, ф1", "graph_unit": "В", "graph_var": "VOLTA_1_" }
+      ,{ "var": "VOLTA(2)", "name": "Напряжение, ф2", "graph_unit": "В", "graph_var": "VOLTA_2_" }
+      ,{ "var": "VOLTA(3)", "name": "Напряжение, ф3", "graph_unit": "В", "graph_var": "VOLTA_3_" }
+      ,{ "var": "CURRE(1)", "name": "Ток, ф1", "graph_unit": "А", "graph_var": "CURRE_1_" }
+      ,{ "var": "CURRE(2)", "name": "Ток, ф2", "graph_unit": "А", "graph_var": "CURRE_2_" }
+      ,{ "var": "CURRE(3)", "name": "Ток, ф3", "graph_unit": "А", "graph_var": "CURRE_3_" }
+      ,{ "var": "IDPAS()", "name": "Адрес на шине" }
+      ,{ "var": "TIME_()", "name": "Время" }
+      ,{ "var": "DATE_()", "name": "Дата (н.д.м.г)" }
+    ]
+  }
 }
